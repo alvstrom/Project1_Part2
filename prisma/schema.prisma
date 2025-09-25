@@ -28,8 +28,8 @@ model Board {
 model Postit {
   id        String   @id @default(cuid())
   content   String
-  xPosition Int
-  yPosition Int
+  xPosition Int      @default(0)
+  yPosition Int      @default(0)
   color     String   @default("#ffff88")
   boardId   String
   createdBy String

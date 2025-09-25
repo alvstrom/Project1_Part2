@@ -6,31 +6,39 @@ const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-const app = express();
-const prisma = new PrismaClient();
+const {
+  authenticateToken,
+  validatePostit,
+  validateBoard,
+} = require("./middleware");
 
+const app = express();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
 app.use(cors());
 app.use(express.json());
 
-//jwt auth middleware
-
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ error: "Access token required" });
+app.get("/api/wake-db", async (req, res) => {
+  try {
+    //testing to wake up db
+    const result = await prisma.$queryRaw`SELECT 1 as test`;
+    res.json({
+      message: "Database is awake!",
+      result,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to wake database: " + error.message,
+    });
   }
+});
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      console.log("JWT Error:", err.message);
-      return res.status(403).json({ error: "Invalid or expired token" });
-    }
-    req.user = user;
-    next();
-  });
-};
 // GET all postits
 app.get("/api/postits", authenticateToken, async (req, res) => {
   try {
@@ -48,42 +56,57 @@ app.get("/api/postits", authenticateToken, async (req, res) => {
 });
 
 // POST - Create new postit
-app.post("/api/postits", authenticateToken, async (req, res) => {
-  try {
-    const { content, xPosition, yPosition, color, boardId } = req.body;
-    const postit = await prisma.postit.create({
-      data: {
-        content,
-        xPosition,
-        yPosition,
-        color,
-        boardId,
-        createdBy: req.user.id,
-      },
-    });
-    res.status(201).json(postit);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-//PATCH - Update note
-app.patch("/api/postits/:id", authenticateToken, async (req, res) => {
-  try {
-    const updateData = req.body;
-    const postit = await prisma.postit.update({
-      where: { id: req.params.id, createdBy: req.user.id },
-      data: updateData,
-    });
-    res.json(postit);
-  } catch (error) {
-    if (error.code === "P2025") {
-      res.status(404).json({ error: "Post-it not found" });
-    } else {
+app.post(
+  "/api/postits",
+  authenticateToken,
+  validatePostit,
+  async (req, res) => {
+    try {
+      const { content, xPosition, yPosition, color, boardId } = req.body;
+      if (!content || !boardId) {
+        return res.status(400).json({
+          error: "Content and boardId are required for creating post-its",
+        });
+      }
+      const postit = await prisma.postit.create({
+        data: {
+          content,
+          xPosition,
+          yPosition,
+          color,
+          boardId,
+          createdBy: req.user.id,
+        },
+      });
+      res.status(201).json(postit);
+    } catch (error) {
       res.status(400).json({ error: error.message });
     }
   }
-});
+);
+
+//PATCH - Update postit
+app.patch(
+  "/api/postits/:id",
+  authenticateToken,
+  validatePostit,
+  async (req, res) => {
+    try {
+      const updateData = req.body;
+      const postit = await prisma.postit.update({
+        where: { id: req.params.id, createdBy: req.user.id },
+        data: updateData,
+      });
+      res.json(postit);
+    } catch (error) {
+      if (error.code === "P2025") {
+        res.status(404).json({ error: "Post-it not found" });
+      } else {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  }
+);
 
 //DELETE - Delete post-it
 app.delete("/api/postits/:id", authenticateToken, async (req, res) => {
@@ -115,9 +138,16 @@ app.get("/api/boards", authenticateToken, async (req, res) => {
 });
 
 //POST - Create new board
-app.post("/api/boards", authenticateToken, async (req, res) => {
+app.post("/api/boards", authenticateToken, validateBoard, async (req, res) => {
   try {
     const { name, description, isPublic } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        error: "Board name is required for creating boards",
+      });
+    }
+
     const board = await prisma.board.create({
       data: { name, description, isPublic, createdBy: req.user.id },
     });
@@ -129,24 +159,29 @@ app.post("/api/boards", authenticateToken, async (req, res) => {
 
 // PATCH update board
 
-app.patch("/api/boards/:id", authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
+app.patch(
+  "/api/boards/:id",
+  authenticateToken,
+  validateBoard,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
 
-    const board = await prisma.board.update({
-      where: { id, createdBy: req.user.id },
-      data: updateData,
-    });
-    res.json(board);
-  } catch (error) {
-    if (error.code === "P2025") {
-      res.status(404).json({ error: "Board not found" });
-    } else {
-      res.status(400).json({ error: error.message });
+      const board = await prisma.board.update({
+        where: { id, createdBy: req.user.id },
+        data: updateData,
+      });
+      res.json(board);
+    } catch (error) {
+      if (error.code === "P2025") {
+        res.status(404).json({ error: "Board not found" });
+      } else {
+        res.status(400).json({ error: error.message });
+      }
     }
   }
-});
+);
 
 //DELETE - Delete board
 app.delete("/api/boards/:id", authenticateToken, async (req, res) => {
@@ -162,6 +197,19 @@ app.delete("/api/boards/:id", authenticateToken, async (req, res) => {
       res.status(400).json({ error: error.message });
     }
   }
+});
+
+//Shutdown to avoid connections being left open
+process.on("SIGINT", async () => {
+  console.log("Shutting down gracefully...");
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  console.log("Shutting down gracefully...");
+  await prisma.$disconnect();
+  process.exit(0);
 });
 
 app.listen(3002, () => console.log("Server started on port 3002"));
