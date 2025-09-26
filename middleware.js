@@ -15,7 +15,7 @@ const authenticateToken = (req, res, next) => {
       console.log("JWT Error:", err.message);
       return res.status(403).json({ error: "Invalid or expired token" });
     }
-
+    console.log("Decoded user from JWT:", user);
     user.id = user.id || user.sub;
     req.user = user;
     next();
