@@ -1,48 +1,98 @@
-# Project 1 Part 2
+# Project1_Part2
 
-REST API for whiteboard application with post-its and boards.
-REST client i used for testing: Insomnia
+A collaborative whiteboard app with Node.js, Express, Prisma, and PostgreSQL.
 
-## Setup
+## Start
 
-```bash
-npm install
-# Add .env file with JWT_SECRET and DATABASE_URL
-npx prisma db push
-npm run dev
+1. **Clone the repo**
+
+   ```sh
+   git clone https://github.com/alvstrom/Project1_Part2.git
+   cd Project1_Part2
+   ```
+
+2. **Set up environment variables**
+
+   Edit `.env` with your `DATABASE_URL` and `JWT_SECRET`.
+
+3. **Install dependencies**
+
+   ```sh
+   npm install
+   ```
+
+4. **Prisma setup**
+
+   ```sh
+   npx prisma generate
+   npx prisma db push
+   ```
+
+5. **Start the server**
+   ```sh
+   node index.js
+   ```
+
+## Docker
+
+To run with Docker Compose:
+
+```sh
+docker compose up --build
 ```
 
-Server runs on `http://localhost:3002`
+## API
 
-## API Endpoints
+- REST endpoints for boards and post-its.
+- JWT authentication required.
 
-All endpoints require JWT authentication except `/api/wake-db`.
+---
 
-**Authentication:**
+````# Project1_Part2
 
+A collaborative whiteboard app with Node.js, Express, Prisma, and PostgreSQL.
+
+## Quick Start
+
+1. **Clone the repo**
+   ```sh
+   git clone https://github.com/alvstrom/Project1_Part2.git
+   cd Project1_Part2
+````
+
+2. **Set up environment variables**
+
+   Edit `.env` with your `DATABASE_URL` and `JWT_SECRET`.
+
+3. **Install dependencies**
+
+   ```sh
+   npm install
+   ```
+
+4. **Prisma setup**
+
+   ```sh
+   npx prisma generate
+   npx prisma db push
+   ```
+
+5. **Start the server**
+   ```sh
+   node index.js
+   ```
+
+## Docker
+
+To run with Docker Compose:
+
+```sh
+docker compose up --build
 ```
-Authorization: Bearer <your-jwt-token>
-```
 
-**Boards:**
+## API
 
-- `GET/POST/PATCH/DELETE /api/boards`
+- REST endpoints for boards and post-its.
+- JWT authentication required.
 
-**Post-its:**
-
-- `GET/POST/PATCH/DELETE /api/postits`
-
-**Test:**
-
-- `GET /api/wake-db` - Test database connection
-
-## Technologies
-
-Express.js, Prisma, PostgreSQL (Supabase), JWT, Zod
-
-## Features
-
-- JWT Authentication & user data isolation
-- Input validation with proper error handling
-- CRUD operations with cascade delete
-- RESTful API design
+---
