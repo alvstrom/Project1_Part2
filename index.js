@@ -24,7 +24,6 @@ app.use(express.json());
 
 app.get("/api/wake-db", async (req, res) => {
   try {
-    //testing to wake up db
     const result = await prisma.$queryRaw`SELECT 1 as test`;
     res.json({
       message: "Database is awake!",
@@ -38,7 +37,6 @@ app.get("/api/wake-db", async (req, res) => {
   }
 });
 
-// GET all postits
 app.get("/api/postits", authenticateToken, async (req, res) => {
   try {
     const postits = await prisma.postit.findMany({
@@ -54,7 +52,6 @@ app.get("/api/postits", authenticateToken, async (req, res) => {
   }
 });
 
-// POST - Create new postit
 app.post(
   "/api/postits",
   authenticateToken,
@@ -84,7 +81,6 @@ app.post(
   }
 );
 
-//PATCH - Update postit
 app.patch(
   "/api/postits/:id",
   authenticateToken,
@@ -107,7 +103,6 @@ app.patch(
   }
 );
 
-//DELETE - Delete post-it
 app.delete("/api/postits/:id", authenticateToken, async (req, res) => {
   try {
     await prisma.postit.delete({
@@ -123,7 +118,6 @@ app.delete("/api/postits/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// GET all boards
 app.get("/api/boards", authenticateToken, async (req, res) => {
   try {
     const boards = await prisma.board.findMany({
@@ -136,7 +130,6 @@ app.get("/api/boards", authenticateToken, async (req, res) => {
   }
 });
 
-//POST - Create new board
 app.post("/api/boards", authenticateToken, validateBoard, async (req, res) => {
   try {
     const { name, description, isPublic } = req.body;
@@ -155,8 +148,6 @@ app.post("/api/boards", authenticateToken, validateBoard, async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-
-// PATCH update board
 
 app.patch(
   "/api/boards/:id",
@@ -182,7 +173,6 @@ app.patch(
   }
 );
 
-//DELETE - Delete board
 app.delete("/api/boards/:id", authenticateToken, async (req, res) => {
   try {
     await prisma.board.delete({
@@ -198,15 +188,12 @@ app.delete("/api/boards/:id", authenticateToken, async (req, res) => {
   }
 });
 
-//Shutdown to avoid connections being left open
 process.on("SIGINT", async () => {
-  console.log("Shutting down gracefully...");
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("Shutting down gracefully...");
   await prisma.$disconnect();
   process.exit(0);
 });
