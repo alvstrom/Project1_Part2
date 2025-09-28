@@ -39,9 +39,7 @@ app.get("/api/wake-db", async (req, res) => {
 
 app.get("/api/postits", authenticateToken, async (req, res) => {
   try {
-    const postits = await prisma.postit.findMany({
-      where: { createdBy: req.user.userId },
-    });
+    const postits = await prisma.postit.findMany();
     res.json({
       message: "Database connected!",
       count: postits.length,
@@ -89,7 +87,7 @@ app.patch(
     try {
       const updateData = req.body;
       const postit = await prisma.postit.update({
-        where: { id: req.params.id, createdBy: req.user.userId },
+        where: { id: req.params.id },
         data: updateData,
       });
       res.json(postit);
@@ -106,7 +104,7 @@ app.patch(
 app.delete("/api/postits/:id", authenticateToken, async (req, res) => {
   try {
     await prisma.postit.delete({
-      where: { id: req.params.id, createdBy: req.user.userId },
+      where: { id: req.params.id },
     });
     res.status(204).send();
   } catch (error) {
@@ -122,7 +120,6 @@ app.get("/api/boards", authenticateToken, async (req, res) => {
   try {
     const boards = await prisma.board.findMany({
       include: { postits: true },
-      where: { createdBy: req.user.userId },
     });
     res.json(boards);
   } catch (error) {
@@ -159,7 +156,7 @@ app.patch(
       const updateData = req.body;
 
       const board = await prisma.board.update({
-        where: { id, createdBy: req.user.userId },
+        where: { id },
         data: updateData,
       });
       res.json(board);
@@ -176,7 +173,7 @@ app.patch(
 app.delete("/api/boards/:id", authenticateToken, async (req, res) => {
   try {
     await prisma.board.delete({
-      where: { id: req.params.id, createdBy: req.user.userId },
+      where: { id: req.params.id },
     });
     res.status(204).send();
   } catch (error) {
